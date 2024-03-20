@@ -1,2 +1,24 @@
-# docker-swarm-setup
-this is a quick and dirty terraform template that spins up a couple vanilla ec2 instances with the underlying required cloud infra and then swarmifies those ec2 instances to create a docker swarm with distributed docker nodes.  this is meant to be a barebones setup in order to quickly deploy projects that require distributed containers and some basic container orchestration.  in the future i may add some automation here so that each each swarm node IP gets automatically added to an AWS discovery pool.  Then I would like to create an API Gateway resource via the terraform template that would point to this discovery pool, the result being the API Gateway will load balance among the swarm nodes without us having to update the config each time a new ec2 instances gets spun up.
+# Docker Swarm Setup
+
+This repository contains a Terraform template for quickly setting up a Docker Swarm on EC2 instances. The template creates the necessary cloud infrastructure and configures the EC2 instances to form a Docker Swarm, enabling distributed container deployment and basic container orchestration.
+
+## Features
+
+- Spins up vanilla EC2 instances.
+- Configures the necessary cloud infrastructure underneath including VPCs and security groups.
+- Sets up Docker Swarm on the EC2 instances for distributed container deployment.
+
+## Future Improvements
+
+- Automate the addition of each Swarm node IP to an AWS discovery pool.
+- Create an API Gateway resource via the Terraform template that points to the discovery pool. This will allow the API Gateway to load balance among the Swarm nodes without us having to manually update the config each time a new EC2 instance is spun up.
+
+## Usage
+
+```bash
+terraform apply
+```
+
+## Contributing
+
+Please replace this with instructions on how to contribute to your project.

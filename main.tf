@@ -13,21 +13,10 @@ resource "aws_key_pair" "ssh_key" {
   public_key = file("~/.ssh/id_rsa.pub")
 }
 
-# call environment variable for secret_key in terraform
-variable "aws_secret_key" {
-    type = string
-}
-
-variable "aws_access_key" {
-    type = string
-}
-
 
 # Configure aws provider
 provider "aws" {
 	region = "us-west-2"
-	secret_key = "${var.aws_secret_key}"
-	access_key = "${var.aws_access_key}"
 }
 
 
@@ -99,7 +88,7 @@ resource "aws_route_table_association" "fantasy_route_table_association"{
 // ec2 security group
 resource "aws_security_group" "fantasy_security_group" {
 	name = "fantasy_security_group"
-	vpc_id = "${aws_vpc.test-env.id}"
+	vpc_id = "${aws_vpc.fantasy_vpc.id}"
 	ingress {
 		cidr_blocks = [
 		"0.0.0.0/0"
@@ -123,7 +112,8 @@ resource "aws_instance" "farc-instance" {
 	instance_type = "t2.micro"
 	subnet_id = aws_subnet.public_subnet_one.id
 	key_name = aws_key_pair.ssh_key.key_name
-	security_groups = aws_security_group.fantasy_security_group.id
+	security_groups = [aws_security_group.fantasy_security_group.id]
+	depends_on = [aws_instance.contra-instance]
 	
 	# Name the instance
   	tags = {
@@ -169,11 +159,15 @@ resource "aws_instance" "farc-instance" {
 		}
 	}
 
-	# initiate docker swarm manager node.
+	# initiate docker swarm manager node and copy join token to our other ec2 instance.
 	provisioner "remote-exec" {
 		inline = [
-		"chmod +x /home/ec2-user/initiate-swarm.sh",
+
+		"echo 'StrictHostKeyChecking no' | sudo tee -a /home/ec2-user/.ssh/config",
+    	"echo 'UserKnownHostsFile /dev/null' | sudo tee -a /home/ec2-user/.ssh/config",
+		"sudo chmod +x /home/ec2-user/initiate-swarm.sh",
 		"sudo /home/ec2-user/initiate-swarm.sh",
+		"sudo scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /home/ec2-user/join-swarm.sh ec2-user@${aws_instance.contra-instance.public_ip}:/home/ec2-user/join-swarm.sh",
 		]
 		connection {
 			type        = "ssh"
@@ -182,8 +176,8 @@ resource "aws_instance" "farc-instance" {
 			host        = self.public_ip
 		}
 	}
-
 }
+
 
 # Create another ec2 instance
 resource "aws_instance" "contra-instance" {
@@ -191,7 +185,7 @@ resource "aws_instance" "contra-instance" {
 	instance_type = "t2.micro"
 	subnet_id = aws_subnet.public_subnet_one.id
 	key_name = aws_key_pair.ssh_key.key_name
-	security_groups = aws_security_group.fantasy_security_group.id
+	security_groups = [aws_security_group.fantasy_security_group.id]
 
 	# Name the instance
   	tags = {
@@ -214,6 +208,8 @@ resource "aws_instance" "contra-instance" {
 	# Change permissions on bash script and execute from ec2-user.
 	provisioner "remote-exec" {
 		inline = [
+		"echo 'StrictHostKeyChecking no' | sudo tee -a /home/ec2-user/.ssh/config",
+    	"echo 'UserKnownHostsFile /dev/null' | sudo tee -a /home/ec2-user/.ssh/config",
 		"chmod +x /home/ec2-user/install-docker.sh",
 		"sudo /home/ec2-user/install-docker.sh",
 		]
@@ -224,5 +220,26 @@ resource "aws_instance" "contra-instance" {
 			host        = self.public_ip
 		}
 	}
+}
 
+# Join the swarm as a worker node.
+resource "null_resource" "post_provision" {
+  	depends_on = [aws_instance.farc-instance, aws_instance.contra-instance]
+
+  	provisioner "remote-exec" {
+    	inline = [
+		"sudo chown ec2-user:ec2-user ~/.ssh/config",
+		"echo 'StrictHostKeyChecking no' >> ~/.ssh/config",
+    	"echo 'UserKnownHostsFile /dev/null' >> ~/.ssh/config",
+      	"chmod +x /home/ec2-user/join-node.sh",
+      	"sudo /home/ec2-user/join-node.sh",
+    	]
+  	}
+	
+  	connection {
+    	type        = "ssh"
+    	user        = "ec2-user"
+    	private_key = file("~/.ssh/id_rsa")
+    	host        = aws_instance.contra-instance.public_ip
+  	}
 }

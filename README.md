@@ -13,9 +13,9 @@ This repository contains a Terraform template for quickly setting up a Docker Sw
 - jq 
 
 ## Setup
-If you are new to using Terraform with AWS provider, Terraform uses the AWS SDK for Go behind the scenes, which automatically checks environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+If you are new to using Terraform with the AWS provider, Terraform uses the AWS SDK for Go behind the scenes, which automatically checks environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 
-This means that 1.  Defining these variables in the terraform template is not required and 2.  Setting your aws credentials as environment variables is a requirement to run this.  See example below
+This means that 1.  Defining these variables in the terraform template is not required and 2.  Setting your own AWS credentials as environment variables is a requirement to run this.  See example below
 
 ```bash
 export AWS_ACCESS_KEY_ID=your_access_key

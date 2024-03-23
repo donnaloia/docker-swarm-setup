@@ -1,6 +1,6 @@
 # AWS Docker Swarm Setup
 
-This repository contains a Terraform template for quickly setting up a Docker Swarm on EC2 instances. The template creates the necessary cloud infrastructure and configures the EC2 instances to form a Docker Swarm, enabling distributed container deployment and basic container orchestration.
+This repository contains a Terraform template for quickly setting up a Docker Swarm on EC2 instances. The template creates the necessary underlying cloud infrastructure and configures the EC2 instances to form a Docker Swarm, enabling distributed container deployment and basic container orchestration.
 
 ## Features
 
